@@ -135,6 +135,13 @@ def index():
     return render_template_string(HTML_TEMPLATE, files=files, message=request.args.get('message'), 
                                 error=request.args.get('error'))
 
+@app.route('/download/<filename>')
+def download(filename):
+    try:
+        return send_file(os.path.join(UPLOAD_FOLDER, filename), as_attachment=True)
+    except Exception as e:
+        return index()
+
 if __name__ == '__main__':
     # Ejecutar el servidor en el puerto 5000 y hacer accesible desde cualquier dispositivo en la red
     app.run(host='0.0.0.0', port=5000, debug=True)
