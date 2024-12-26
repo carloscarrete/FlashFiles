@@ -116,7 +116,7 @@ HTML_TEMPLATE = """
                 {% for file in files %}
                 <div class="file-item">
                     <span>{{ file }}</span>
-                    <a href="{{ url_for('download', filename=file) }}">Descargar</a>
+                    <a href="{{ url_for('download', filename=file) }}">Download</a>
                 </div> 
                 {% endfor %}
             {% else %}
@@ -141,7 +141,23 @@ def download(filename):
         return send_file(os.path.join(UPLOAD_FOLDER, filename), as_attachment=True)
     except Exception as e:
         return index()
+    
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return index()
+    
+    file = request.files['file']
+    if file.filename == '':
+        return index()
+    
+    try:
+        filename = secure_filename(file.filename)
+        file.save(os.path.join(UPLOAD_FOLDER, filename))
+        return index()
+    except Exception as e:
+        return index()
 
 if __name__ == '__main__':
-    # Ejecutar el servidor en el puerto 5000 y hacer accesible desde cualquier dispositivo en la red
+    # Run the Flask app
     app.run(host='0.0.0.0', port=5000, debug=True)
