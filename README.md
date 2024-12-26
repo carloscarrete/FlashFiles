@@ -57,10 +57,8 @@ From there, you can:
 
 ## Future Improvements
 
-- Add file compression to optimize transfer speeds.
 - Allow multiple file uploads at once.
-- Add support for user authentication to secure file access.
-- Integrate real-time notifications for file uploads.
+- Allow multiple file downloads at once.
 
 ## License
 
