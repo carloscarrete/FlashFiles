@@ -1,6 +1,4 @@
-¡Perfecto! Aquí tienes un archivo `README.md` bonito para tu proyecto **FlashFiles**:
 
-```markdown
 # FlashFiles
 
 FlashFiles is a simple and fast local file transfer application built with Flask. It allows users to easily upload, download, and share files within a local network. Whether you're sharing documents, videos, or photos, FlashFiles makes the process smooth and efficient.
