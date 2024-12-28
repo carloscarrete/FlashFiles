@@ -1,6 +1,8 @@
-from flask import Flask, request, send_file, render_template_string
+from flask import Flask, request, send_file, render_template_string, make_response
 import os
 from werkzeug.utils import secure_filename
+import zipfile
+from io import BytesIO
 
 app = Flask(__name__)
 
@@ -73,6 +75,10 @@ HTML_TEMPLATE = """
         input[type="submit"]:hover {
             background-color: #00cc00;
         }
+         /* Estilos para el checkbox */
+        input[type="checkbox"] {
+            margin-right: 5px;
+        }
         .status {
             margin-top: 10px;
             padding: 10px;
@@ -132,6 +138,26 @@ HTML_TEMPLATE = """
             text-align: center;
             color: #00ff00;
         }
+         /* Estilo para el botón de descarga multiple */
+        #downloadSelected {
+            background-color: #00ff00;
+            color: #000;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            display: block;
+            text-align: center;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+
+        }
+
+        #downloadSelected:hover {
+            background-color: #00cc00;
+        }
     </style>
 </head>
 <body>
@@ -164,19 +190,26 @@ HTML_TEMPLATE = """
             </div>
         </div>
 
-        <div class="file-list">
+         <div class="file-list">
             <h2>Archivos Disponibles</h2>
-            {% if files %}
-                {% for file in files %}
-                <div class="file-item">
-                    <span>{{ file }}</span>
-                    <a href="{{ url_for('download', filename=file) }}">Descargar</a>
-                </div>
-                {% endfor %}
-            {% else %}
-                <p>No hay archivos disponibles.</p>
-            {% endif %}
-        </div>
+            <form id="downloadForm" method="post" action="/download_selected">
+                {% if files %}
+                    {% for file in files %}
+                    <div class="file-item">
+                    <div>
+                    <input type="checkbox" name="selected_files" value="{{ file }}">
+                        <span>{{ file[:45] + '...' if file|length > 45 else file }}</span>
+                    </div>
+                        <a href="{{ url_for('download', filename=file) }}">Descargar</a>
+                    </div>
+                    {% endfor %}
+                        <button type="submit" id="downloadSelected">Descargar Seleccionados</button>
+                {% else %}
+                    <p>No hay archivos disponibles.</p>
+                {% endif %}
+                </form>
+            </div>
+
     </div>
 
     <script>
@@ -301,6 +334,33 @@ def download(filename):
         return send_file(os.path.join(UPLOAD_FOLDER, filename), as_attachment=True)
     except Exception as e:
         return str(e), 404
+
+@app.route('/download_selected', methods=['POST'])
+def download_selected():
+    selected_files = request.form.getlist('selected_files')
+    if not selected_files:
+        return "No files selected", 400
+
+    if len(selected_files) == 1:
+        # Si solo se seleccionó un archivo, descargarlo individualmente
+        return download(selected_files[0])
+
+    # Crear el zip en memoria
+    memory_zip = BytesIO()
+    with zipfile.ZipFile(memory_zip, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for file_name in selected_files:
+            file_path = os.path.join(UPLOAD_FOLDER, file_name)
+            try:
+                zipf.write(file_path, arcname=file_name)
+            except FileNotFoundError:
+                return f"Archivo no encontrado: {file_name}", 404
+
+    memory_zip.seek(0)
+    
+    # Devolver como archivo descargable
+    response = make_response(send_file(memory_zip, as_attachment=True, download_name="selected_files.zip"))
+    response.headers['Content-Type'] = 'application/zip'
+    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
